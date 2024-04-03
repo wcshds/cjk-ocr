@@ -1,0 +1,22 @@
+MODEL:
+  numbering: 1000 # high surrogate number + low surrogate number
+  reserve_chars: 200000
+  stacks: 3
+  n_heads: 8
+  dropout: 0.2
+  bias: true
+  share_parameter: false
+  use_feed_forward: true
+  feed_forward_size: 2048
+
+TRAINING:
+  num_cuda: 8
+  num_workers: 8
+  num_epochs: 20
+  batch_size: 40
+  seed: 3407
+  learning_rate: 0.0004
+  lexicon_path: "./lexicon.txt"
+  data_root_path: "./data"
+  # pretrained_model_path: "" # it seems that file name should not contain filename extension (.bin)
+  save_dir: "./ocr-models"
