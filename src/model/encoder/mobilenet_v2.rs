@@ -298,7 +298,7 @@ pub struct Encoder<B: Backend> {
 }
 
 impl<B: Backend> Encoder<B> {
-    pub fn new(device: &B::Device) -> Self {
+    pub fn new(device: &B::Device, dimensions: usize) -> Self {
         let conv1 = Sequential::from(vec![
             convolution(device, 1, 32, 1, [3, 3], [1, 1], [1, 1], false).into(),
             BatchNormConfig::new(32).init(device).into(),
@@ -378,13 +378,13 @@ impl<B: Backend> Encoder<B> {
                 .into(),
         ]);
         let conv5 = Sequential::from(vec![
-            InvertedResidualBlockConfig::new(256, 512, [3, 3], [1, 1])
+            InvertedResidualBlockConfig::new(256, dimensions, [3, 3], [1, 1])
                 .with_padding([1, 1])
                 .with_expansion(6)
                 .with_bias(false)
                 .init(device)
                 .into(),
-            MultiAspectGCAttentionConfig::new(512)
+            MultiAspectGCAttentionConfig::new(dimensions)
                 .with_ratio(1.0 / 16.0)
                 .with_headers(8)
                 .with_att_scale(true)
@@ -392,7 +392,7 @@ impl<B: Backend> Encoder<B> {
                 .into(),
         ]);
 
-        let position = PositionalEncodingConfig::new(512).init(device);
+        let position = PositionalEncodingConfig::new(dimensions).init(device);
 
         Self {
             conv1,
@@ -440,7 +440,7 @@ mod test {
             burn::tensor::Distribution::Normal(0.0, 1.0),
             &device,
         );
-        let encoder = Encoder::new(&device);
+        let encoder = Encoder::new(&device, 512);
         let res = encoder.forward(input);
 
         println!("{}", res)

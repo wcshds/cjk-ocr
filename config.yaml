@@ -1,7 +1,8 @@
 MODEL:
   numbering: 1000 # high surrogate number + low surrogate number
   reserve_chars: 200000
-  stacks: 3
+  dimensions: 512
+  stacks: 10
   n_heads: 8
   dropout: 0.2
   bias: true

@@ -1,14 +1,24 @@
 use std::{fs, time::Instant};
 
-use burn::{backend::{libtorch::LibTorchDevice, LibTorch}, module::Module, record::{DoublePrecisionSettings, PrettyJsonFileRecorder}, tensor::{activation, Data, Int, Tensor}};
-use cjk_ocr::{image_data::ImageFactory, model::text_rec::OcrConfig, utils::label_converter::LabelConverter};
+use burn::{
+    backend::{libtorch::LibTorchDevice, LibTorch},
+    module::Module,
+    record::{
+        BinFileRecorder, DoublePrecisionSettings, FullPrecisionSettings, PrettyJsonFileRecorder,
+    },
+    tensor::{activation, Data, Int, Tensor},
+};
+use cjk_ocr::{
+    model::text_rec::OcrConfig,
+    utils::{image_reader::ImageReader, label_converter::LabelConverter},
+};
 
 fn main() {
     type MyBackend = LibTorch;
     let device = LibTorchDevice::Cuda(0);
 
     // prepare data
-    let img_factory = ImageFactory::read_images(
+    let img_factory = ImageReader::read_images(
         &[
             "images/temp.png",
             "images/temp2.png",
@@ -32,13 +42,14 @@ fn main() {
 
     // model
     let model = OcrConfig::new(1003, 1000)
-        .with_share_parameter(true)
-        .with_use_feed_forward(false)
+        .with_dimensions(384)
         .with_stacks(3)
+        .with_share_parameter(false)
+        .with_use_feed_forward(true)
         .init::<MyBackend>(&device);
     let pjr = PrettyJsonFileRecorder::<DoublePrecisionSettings>::new();
     let model = model
-        .load_file("model_modified.json", &pjr, &device)
+        .load_file("./build/model_modified.json", &pjr, &device)
         .unwrap();
 
     let start = Instant::now();
@@ -65,7 +76,7 @@ fn main() {
     for i in 0..(max_text_length * 2 + 1) {
         let m_label = model
             .decoder
-            .forward_with_iteration(encoded_res.clone(), to_return_label.clone(), 5);
+            .forward(encoded_res.clone(), to_return_label.clone());
         let m_probability = activation::softmax(m_label, 2);
         let (m_max_probs, m_next_word) = m_probability.max_dim_with_indices(2);
         let m_max_probs = m_max_probs.squeeze(2);

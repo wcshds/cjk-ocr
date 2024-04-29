@@ -8,6 +8,7 @@ use burn::{
 use image::imageops;
 use serde::{Deserialize, Serialize};
 
+#[derive(Clone)]
 pub struct TextImgBatcher<B: Backend> {
     device: B::Device,
 }

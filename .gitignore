@@ -1,5 +1,5 @@
 /target
-/model_modified.json
-/model.bin
-/model.bin.gz
-/resized-temp7.png
+/build
+/model_save*
+/images/resized-temp7.png
+/images/temp10.jpg

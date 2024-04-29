@@ -8,6 +8,7 @@ use cjk_ocr::{
 fn main() {
     let full_config = OcrFullConfig::from_yaml("./config.yaml");
     let ocr_config = OcrConfig::new(full_config.numbering + 3, full_config.numbering)
+        .with_dimensions(full_config.dimensions)
         .with_stacks(full_config.stacks)
         .with_n_heads(full_config.n_heads)
         .with_dropout(full_config.dropout)

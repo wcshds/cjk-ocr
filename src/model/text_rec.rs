@@ -20,6 +20,8 @@ use super::{
 pub struct OcrConfig {
     num_classes: usize,
     padding_idx: usize,
+    #[config(default = 512)]
+    dimensions: usize,
     #[config(default = 3)]
     stacks: usize,
     #[config(default = 8)]
@@ -40,8 +42,8 @@ impl OcrConfig {
     /// Returns the initialized model.
     pub fn init<B: Backend>(&self, device: &B::Device) -> OCR<B> {
         OCR {
-            encoder: Encoder::new(device),
-            decoder: DecoderConfig::new(self.num_classes, 512)
+            encoder: Encoder::new(device, self.dimensions),
+            decoder: DecoderConfig::new(self.num_classes, self.dimensions)
                 .with_padding_idx(self.padding_idx)
                 .with_stacks(self.stacks)
                 .with_n_heads(self.n_heads)
@@ -66,7 +68,7 @@ pub struct OCR<B: Backend> {
 impl<B: Backend> OCR<B> {
     pub fn new(num_classes: usize, padding_idx: usize, device: &B::Device) -> Self {
         Self {
-            encoder: Encoder::new(device),
+            encoder: Encoder::new(device, 512),
             decoder: DecoderConfig::new(num_classes, 512)
                 .with_padding_idx(padding_idx)
                 .with_stacks(3)

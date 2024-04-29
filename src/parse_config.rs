@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 struct OcrYaml {
     numbering: usize,
     reserve_chars: u32,
+    dimensions: usize,
     stacks: usize,
     n_heads: usize,
     dropout: f64,
@@ -39,6 +40,7 @@ struct OcrTrainingConfigYaml {
 pub struct OcrFullConfig {
     pub numbering: usize,
     pub reserve_chars: u32,
+    pub dimensions: usize,
     pub stacks: usize,
     pub n_heads: usize,
     pub dropout: f64,
@@ -66,6 +68,7 @@ impl OcrFullConfig {
         Self {
             numbering: yaml.model.numbering,
             reserve_chars: yaml.model.reserve_chars,
+            dimensions: yaml.model.dimensions,
             stacks: yaml.model.stacks,
             n_heads: yaml.model.n_heads,
             dropout: yaml.model.dropout,

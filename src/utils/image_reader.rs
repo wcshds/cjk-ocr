@@ -4,21 +4,23 @@ use burn::tensor::{backend::Backend, Data, Shape, Tensor};
 use image::{GrayImage, Luma};
 
 #[derive(Debug)]
-pub struct ImageFactory {
+pub struct ImageReader {
     imgs: Vec<u8>,
     batch: usize,
     height: usize,
     width: usize,
 }
 
-impl ImageFactory {
-    pub fn read_images<P: AsRef<Path>>(paths: &[P], height: u32, width: u32) -> ImageFactory {
+impl ImageReader {
+    pub fn read_images<P: AsRef<Path>>(paths: &[P], height: u32, width: u32) -> ImageReader {
         let batch = paths.len();
         let height_usize = height as usize;
         let width_usize = width as usize;
         let mut total_img_vec = Vec::with_capacity(batch * height_usize * width_usize);
         for path in paths {
-            let img = GrayImage::from(image::open(path).unwrap());
+            let img = image::open(path)
+                .expect(&format!("Cannot read image from path: {:?}", path.as_ref()));
+            let img = GrayImage::from(img);
             let [origin_height, origin_width] = [img.height(), img.width()];
             let img = image::imageops::resize(
                 &img,

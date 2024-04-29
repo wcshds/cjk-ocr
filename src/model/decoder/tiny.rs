@@ -5,18 +5,21 @@ use burn::{
         attention::{
             generate_autoregressive_mask, MhaInput, MultiHeadAttention, MultiHeadAttentionConfig,
         },
-        transformer::{PositionWiseFeedForward, PositionWiseFeedForwardConfig},
         Dropout, DropoutConfig, Embedding, EmbeddingConfig, LayerNorm, LayerNormConfig, Linear,
         LinearConfig, PositionalEncoding, PositionalEncodingConfig,
     },
     tensor::{backend::Backend, Int, Tensor},
 };
 
+use crate::burn_ext::position_wise_feed_forward::{
+    PositionWiseFeedForward, PositionWiseFeedForwardConfig,
+};
+
 #[derive(Module, Debug)]
 pub struct Decoder<B: Backend> {
     pub embedding: Embedding<B>,
     pub position: PositionalEncoding<B>,
-    dropout_pos: Dropout,
+    pos_dropout: Dropout,
     pub masked_attention: Vec<MultiHeadAttention<B>>,
     pub attention: Vec<MultiHeadAttention<B>>,
     pub layernorm: LayerNorm<B>,
@@ -47,7 +50,7 @@ impl<B: Backend> Decoder<B> {
             .forward(target.clone())
             .mul_scalar(self.sqrt_model_size);
         let target_embed = self.position.forward(target_embed);
-        let target_embed = self.dropout_pos.forward(target_embed);
+        let target_embed = self.pos_dropout.forward(target_embed);
 
         let mut output = target_embed;
         for i in 0..iteration {
@@ -61,9 +64,8 @@ impl<B: Backend> Decoder<B> {
                     (&self.masked_attention[0], &self.attention[0], Some(&ff[0]))
                 }
                 (_, _, None) => (&self.masked_attention[i], &self.attention[i], None),
-                (_, _, Some(ff)) => (&self.masked_attention[i], &self.attention[i], Some(&ff[0])),
+                (_, _, Some(ff)) => (&self.masked_attention[i], &self.attention[i], Some(&ff[i])),
             };
-
             let normed_output = self.layernorm.forward(output.clone());
             output = output.clone()
                 + self.dropout.forward(
@@ -132,7 +134,7 @@ impl DecoderConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> Decoder<B> {
         let embedding = EmbeddingConfig::new(self.n_classes, self.dimensions).init(device);
         let position = PositionalEncodingConfig::new(self.dimensions).init(device);
-        let dropout_pos = DropoutConfig::new(0.2).init();
+        let pos_dropout = DropoutConfig::new(0.2).init();
 
         let get_mha = |dimensions, n_heads, dropout| {
             MultiHeadAttentionConfig::new(dimensions, n_heads)
@@ -172,7 +174,7 @@ impl DecoderConfig {
         Decoder {
             embedding,
             position,
-            dropout_pos,
+            pos_dropout,
             masked_attention,
             attention,
             layernorm,
